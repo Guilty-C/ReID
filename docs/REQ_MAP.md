@@ -5,7 +5,7 @@ RQ-01 — Environment Baseline
 
 RQ-02 — Acceptance (Metrics Gate)
 - Policy: Rank-1 ≥ 50%, mAP ≥ 50%
-- Metrics source-of-truth: [TBD] (record full relative path, e.g., outputs/metrics/metrics.json)
+- Metrics source-of-truth: outputs/metrics/metrics.json
 - Gate record: submission/metrics_gate.json
 
 RQ-03 — Operational Evidence
@@ -13,6 +13,5 @@ RQ-03 — Operational Evidence
 - Outputs manifest: outputs/MANIFEST_2025-10-19.txt
 
 Update process:
-- After the E2E run, replace [TBD] with the actual metrics file path.
-- If multiple candidates exist, document the selection rule.
+- If multiple candidates exist, selection rule: prefer canonical path produced by scripts/run_all.sh (outputs/metrics/metrics.json).
 - If no metrics appear, add an OPEN_QUESTION and proceed to Step 4 with available outputs.

@@ -1,0 +1,25 @@
+# Manifest — outputs subtree — 2025-10-19
+
+Root: outputs/
+Run day: 2025-10-19
+Canonical entry: scripts/run_all.sh
+Selection rule: prefer canonical metrics at outputs/metrics/metrics.json
+
+Top paths and sizes:
+1. outputs/metrics/metrics.json — size: n/a
+2. outputs/metrics/history.csv — size: n/a
+3. outputs/metrics/run_id.txt — size: n/a
+4. outputs/embeds/img_embeds.npy — size: n/a
+5. outputs/embeds/text_embeds.npy — size: n/a
+6. outputs/captions.json — size: n/a
+7. outputs/captions_full.json — size: n/a
+8. outputs/ci_smoke/metrics.json — size: n/a
+9. outputs/ablation/metrics.csv — size: n/a
+10. outputs/bench/metrics.csv — size: n/a
+11. outputs/error_slices/topk.csv — size: n/a
+12. outputs/evaluation_results.json — size: n/a
+
+Notes:
+- Windows-safe formatting (no colons in filenames).
+- Includes metrics, embeds, and logs paths if present.
+- This manifest prioritizes key evidence paths for the submission pack.
