@@ -1,0 +1,6 @@
+total=61295
+split[bounding_box_test]=19732
+split[bounding_box_train]=12936
+split[gt_bbox]=25259
+split[query]=3368
+bad=6736

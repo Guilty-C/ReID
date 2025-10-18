@@ -1,0 +1,11 @@
+# 报告检查清单 (Report Checklist)
+- [ ] 指标与表格与 metrics.json/metrics.csv 一致
+- [ ] 误差样例可复现（topk.csv 可定位原图）
+- [ ] SBOM/第三方清单已附（sbom.json, THIRD_PARTY.md）
+- [ ] 质量门禁通过（CI 记录可查）
+- [ ] 运行历史记录齐全（history.csv 1 行）
+- [ ] 合规文档完整（Compliance.md 许可证映射无阻碍项）
+- [ ] 发布说明更新（RELEASE_NOTES.md 与 tag 对齐）
+- [ ] 制品校验：deliverables_*.zip 可解压且校验和匹配
+- [ ] 签署完成（Signoff.md 三方已勾选）
+- [ ] 干净环境复现通过

@@ -1,0 +1,8 @@
+manifest.csv
+outputs/embeds/img_embeds.npy
+outputs/embeds/text_embeds.npy
+outputs/calibrated_scores.npy
+outputs/error_slices/topk_indices.txt
+docs/Final_Report.md
+docs/Error_Analysis.md
+docs/Temperature_Calibration.md

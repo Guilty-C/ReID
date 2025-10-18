@@ -1,0 +1,8 @@
+iso_staging\query\q_0000.jpg
+iso_staging\query\q_0001.jpg
+iso_staging\query\q_0002.jpg
+iso_staging\query\q_0003.jpg
+iso_staging\query\q_0004.jpg
+iso_staging\query\q_0005.jpg
+iso_staging\query\q_0006.jpg
+iso_staging\query\q_0007.jpg

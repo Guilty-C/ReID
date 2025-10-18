@@ -1,0 +1,8 @@
+{
+  "rank1": "number",
+  "mAP": "number",
+  "n_query": "number",
+  "n_gallery": "number",
+  "run_id": "string",
+  "created_at": "string"
+}

@@ -1,0 +1,11 @@
+import os, numpy as np
+wd = os.getcwd()
+tr = os.path.join(wd,'outputs','embeds','text_iso_real.npy')
+ir = os.path.join(wd,'outputs','embeds','img_iso_real.npy')
+T = np.load(tr)
+I = np.load(ir)
+T = T / (np.linalg.norm(T, axis=1, keepdims=True) + 1e-9)
+I = I / (np.linalg.norm(I, axis=1, keepdims=True) + 1e-9)
+np.save(tr, T)
+np.save(ir, I)
+print('[OK] normalized real embeds:', T.shape, I.shape)

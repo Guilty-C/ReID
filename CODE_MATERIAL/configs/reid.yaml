@@ -1,0 +1,42 @@
+caption:
+  backend: LLM
+  mode:
+  - desc
+  - salient
+  - json
+dataset:
+  root: data/archive/Market-1501-v15.09.15
+  splits:
+    gallery: bounding_box_test
+    query: query
+embed:
+  batch_size: 16
+  device: auto
+  image_backend: clip_l14
+  text_backend: clip_l14
+  weights_path: null
+  # 性能优化选项
+  optimization:
+    quantize: true
+    low_res: true
+    num_processes: 4
+    use_mmap: true
+  # GPU加速选项
+  gpu:
+    enabled: true
+    device: auto  # cuda, cuda:0, cpu
+    batch_size: 256
+    mixed_precision: true
+    num_workers: 4
+    pin_memory: true
+eval:
+  mAP: true
+  rank_k: 1
+paths:
+  embeds: outputs/embeds
+  logs: outputs/logs
+  metrics: outputs/metrics
+  out: outputs
+retrieval:
+  metric: cosine
+  topk: 100
