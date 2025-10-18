@@ -1,0 +1,14 @@
+{
+  "python": "3.11.9",
+  "platform": "unverified",
+  "torch_version": "2.5.1+cu121",
+  "torch_cuda": "12.1",
+  "cuda_available": "unverified",
+  "gpu_name": "unverified",
+  "dataset": {
+    "root": "D:/PRP SunnyLab/ReID/data/archive/Market-1501-v15.09.15",
+    "query_files": 3368,
+    "test_files": 19732,
+    "train_files": 12936
+  }
+}

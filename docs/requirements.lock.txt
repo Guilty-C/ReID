@@ -1,0 +1,2 @@
+# locked on 2025-10-19T09:30+09:00
+# offline-only baseline; populate exact pins via `pip freeze` during the window.
