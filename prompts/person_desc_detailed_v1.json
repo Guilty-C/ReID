@@ -1,0 +1,5 @@
+{
+  "version": "1.0",
+  "prompt": "Describe the person using exactly 6 short, comma-separated tokens: motion (standing/walking/running/sitting/phone use), hair (color + style/length), skin tone (fair/medium/dark), upper (primary color + garment type), lower (primary color + garment type), accessories (hat/glasses/backpack/handbag/shoulder bag/none). Use lowercase nouns/adjectives only; avoid background, age, identity, and non-visible guesses. Keep ≤18 words total; be precise and visual. Examples: 'walking, black short hair, medium skin, red t-shirt, blue jeans, backpack' | 'standing, brown curly hair, fair skin, black hoodie, gray pants, none'",
+  "notes": "Richer attributes to test if more detailed, structured tokens improve retrieval stability."
+}

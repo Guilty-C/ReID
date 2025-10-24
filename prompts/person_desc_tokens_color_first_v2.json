@@ -1,0 +1,4 @@
+{
+  "version": "2.0",
+  "prompt": "Describe the PERSON for text–image retrieval in English with color-first tokens. Exactly two lines.\n\nLine 1 (CAPTION): one sentence (≤25 words) focusing on upper, lower, shoes, and bag.\nLine 2 (TAGS): comma-separated tokens in fixed order: top-<type>-<color>; outerwear-<type>-<color>; bottom-<type>-<color> OR dress-<color>; shoes-<type>-<color>; bag-<type>-<color> OR no-bag; accessories-<items> OR no-accessories; pattern-<name> OR logo-<color>.\n\nConstraints:\n- Colors must be one of: black, white, gray, brown, red, orange, yellow, green, blue, purple, pink, beige.\n- Keep phrases objective and visually grounded; no actions, identity/age/race, or camera terms.\n- Only include categories observed; omit missing ones (except allow no-bag/no-accessories).\n\nOutput (exactly two lines):\nCAPTION: <sentence>\nTAGS: <ordered tokens>"
+}

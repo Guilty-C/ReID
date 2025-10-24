@@ -1,0 +1,5 @@
+{
+  "version": "1.1",
+  "prompt": "Describe the PERSON in English using a color-first, retrieval-friendly style. One sentence only (≤25 words). Order: upper <color/type/pattern>; lower <color/type/pattern>; shoes <color/type>; bag <type>; accessories <items>. Avoid background, actions, gender/age speculation, and non-identity details. Focus on salient visual attributes that distinguish the person.",
+  "notes": "Emphasizes discriminative attributes in a fixed order to improve text–image retrieval robustness."
+}

@@ -161,95 +161,86 @@ def call_caption_api(image_path, prompt, model):
     if api_key and api_key.startswith('api:'):
         api_key = api_key.split(':',1)[1]
     if not url or not api_key:
-        return {'error': 'MISSING_ENV', 'text': '[API_ERROR] missing env'}
+        return {'error': 'MISSING_ENV', 'text': '[API_ERROR] missing env', 'endpoint': '', 'status': None}
 
     b64 = b64_image(image_path)
     ext = os.path.splitext(image_path)[1].lower()
-    mime = 'image/jpeg'
-    if ext in ['.png']:
-        mime = 'image/png'
-    elif ext in ['.webp']:
-        mime = 'image/webp'
+    mime = 'image/jpeg' if ext not in ['.png', '.webp'] else ('image/png' if ext=='.png' else 'image/webp')
     data_url = f'data:{mime};base64,{b64}'
 
-    is_chat = '/chat/completions' in url
-    is_responses = '/responses' in url
-
-    if is_chat or is_responses:
-        use_model = model or os.environ.get('CAPTION_API_MODEL') or 'gpt-4o-mini'
-        payload = {
-            'model': use_model,
-            'messages': [
-                {
-                    'role': 'user',
-                    'content': [
-                        {'type': 'text', 'text': prompt},
-                        {'type': 'image_url', 'image_url': {'url': data_url, 'detail': 'low'}}
-                    ]
-                }
-            ]
-        }
+    base = url.rstrip('/')
+    # Build candidate endpoints: root, /v1/chat/completions, /v1/messages
+    if ('/chat/completions' in base) or ('/responses' in base) or ('/messages' in base):
+        candidates = [base]
     else:
-        payload = {
-            'prompt': prompt,
-            'image_base64': b64,
-            'image_name': os.path.basename(image_path)
-        }
-        if model:
-            payload['model'] = model
+        candidates = [base, base + '/v1/chat/completions', base + '/v1/messages']
 
-    import requests
-    headers = {
-        'Authorization': f'Bearer {api_key}',
-        'Content-Type': 'application/json'
+    use_model = model or os.environ.get('CAPTION_API_MODEL') or 'gpt-4o-mini'
+    chat_payload = {
+        'model': use_model,
+        'messages': [
+            {
+                'role': 'user',
+                'content': [
+                    {'type': 'text', 'text': prompt},
+                    {'type': 'image_url', 'image_url': {'url': data_url, 'detail': 'low'}}
+                ]
+            }
+        ]
     }
-    try:
-        r = requests.post(url, headers=headers, data=json.dumps(payload), timeout=60)
-        raw = r.text
-        if r.status_code >= 400:
-            return {'error': f'HTTP_{r.status_code}', 'text': '[API_ERROR] http'}
+    messages_payload = {
+        'model': use_model,
+        'messages': [
+            {
+                'role': 'user',
+                'content': [
+                    {'type': 'input_text', 'text': prompt},
+                    {'type': 'input_image', 'image': b64}
+                ]
+            }
+        ]
+    }
+    restful_payload = {'prompt': prompt, 'image_base64': b64, 'image_name': os.path.basename(image_path), 'model': use_model}
+    headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'} if api_key else {'Content-Type': 'application/json'}
+
+    import requests, json
+    last_err = ''
+    last_status = None
+    for endpoint in candidates:
         try:
-            obj = json.loads(raw)
-        except Exception:
-            return {'error': 'PARSE_JSON', 'raw': raw, 'text': '[API_ERROR] parse'}
-        text = None
-        if isinstance(obj, dict):
-            if 'choices' in obj and isinstance(obj['choices'], list) and obj['choices']:
-                msg = obj['choices'][0].get('message', {})
+            if '/chat/completions' in endpoint:
+                r = requests.post(endpoint, headers=headers, json=chat_payload, timeout=60)
+                status = r.status_code
+                last_status = status
+                data = r.json()
+                # OpenAI-compatible extraction
+                choice = (data.get('choices') or [{}])[0]
+                msg = choice.get('message', {})
                 content = msg.get('content')
-                if isinstance(content, str):
-                    text = content
-                elif isinstance(content, list):
-                    parts = []
-                    for c in content:
-                        if isinstance(c, dict) and c.get('type') in ('text','output_text'):
-                            t = c.get('text') or c.get('content')
-                            if isinstance(t, str):
-                                parts.append(t)
-                    if parts:
-                        text = ' '.join(parts)
-            if not text and 'output' in obj and isinstance(obj['output'], dict):
-                cont = obj['output'].get('content')
-                if isinstance(cont, list):
-                    parts = []
-                    for c in cont:
-                        if isinstance(c, dict) and c.get('type') in ('text','output_text'):
-                            t = c.get('text') or c.get('content')
-                            if isinstance(t, str):
-                                parts.append(t)
-                    if parts:
-                        text = ' '.join(parts)
-            if not text:
-                text = obj.get('caption') or obj.get('text') or obj.get('output') or obj.get('result')
-        if isinstance(obj, list) and obj and isinstance(obj[0], dict) and not text:
-            text = obj[0].get('caption') or obj[0].get('text')
-        if not text or not isinstance(text, str):
-            return {'error': 'SCHEMA', 'raw_obj': obj, 'text': '[API_ERROR] schema'}
-        return {'text': text.strip(), 'raw_obj': obj}
-    except requests.exceptions.RequestException:
-        return {'error': 'NETWORK', 'text': '[API_ERROR] net'}
-    except Exception as e:
-        return {'error': f'EXC_{type(e).__name__}', 'text': '[API_ERROR] exc'}
+                if isinstance(content, list):
+                    text = ''.join([c.get('text','') for c in content])
+                else:
+                    text = (content or choice.get('text','') or '')
+            elif '/messages' in endpoint:
+                r = requests.post(endpoint, headers=headers, json=messages_payload, timeout=60)
+                status = r.status_code
+                last_status = status
+                data = r.json()
+                text = data.get('output',{}).get('choices',[{}])[0].get('content',[{}])[0].get('text','')
+            else:
+                r = requests.post(endpoint, headers=headers, json=restful_payload, timeout=60)
+                status = r.status_code
+                last_status = status
+                data = r.json()
+                text = data.get('text','') or data.get('content','') or ''
+            if text:
+                return {'text': text, 'endpoint': endpoint, 'status': status}
+            last_err = f'EMPTY_TEXT_{endpoint} status={status}'
+        except Exception as e:
+            last_err = f'{e} endpoint={endpoint}'
+            continue
+    return {'error': last_err or 'REQUEST_FAILED', 'text': '', 'endpoint': candidates[-1] if candidates else '', 'status': last_status}
+
 
 # New: emit aligned ID arrays and mapping CSV
 

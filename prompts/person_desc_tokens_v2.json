@@ -1,0 +1,5 @@
+{
+  "version": "1.2",
+  "prompt": "Look carefully at the person image and output exactly 4 short tokens, comma-separated: top color/type, bottom color/type, shoes color/type, bag color/type or none. Use lowercase nouns/adjectives only, no verbs, no body terms, no camera words. Keep it concise (≤20 words). Prefer the most salient pattern or accessory. If bag not visible, write 'bag none'. Example outputs: 'blue jacket, black pants, white sneakers, bag none' | 'red dress, black heels, bag none, bag none'",
+  "notes": "Goal: CLIP-friendly, discriminative tokens across clothing and bag. Avoid negations except 'none' for missing bag. Keep consistent, lowercase, comma-separated phrases."
+}

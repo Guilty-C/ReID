@@ -145,17 +145,175 @@ def main():
     # Preserve insertion order from JSON object
     for img_name, caption_data in caps.items():
         if isinstance(caption_data, list) and caption_data:
-            if isinstance(caption_data[0], dict):  # JSON mode
+            if isinstance(caption_data[0], dict):  # JSON mode -> single aggregated string
                 text_parts = []
                 for attr_dict in caption_data:
                     if isinstance(attr_dict, dict):
                         text_parts.append(" ".join(f"{k}:{v}" for k, v in attr_dict.items() if v != "[TBD]"))
-                text = ". ".join(text_parts) if text_parts else "person"
-            else:  # desc/salient mode
-                text = ". ".join(str(x) for x in caption_data if x != "[TBD]")
+                group = [". ".join(text_parts) if text_parts else "person"]
+            else:  # desc/salient/api mode -> list of strings; optionally split comma tokens
+                # Normalize separators and split when only one long string present
+                items = [str(x) for x in caption_data if x != "[TBD]"] or ["person"]
+                # Detect structured three-line schema: LINE 1 (key=value; ...), LINE 2 (cues), LINE 3 (context)
+                group = None
+                if len(items) == 1:
+                    s = items[0]
+                    lines = [ln.strip() for ln in s.splitlines() if ln.strip()]
+                    if len(lines) >= 2 and ("gender=" in lines[0] and "distinctive=" in lines[0]):
+                        line1 = lines[0]
+                        line2 = lines[1]
+                        # Parse LINE 1 key=value pairs separated by ';'
+                        kv = {}
+                        for part in [p.strip() for p in line1.split(";") if p.strip()]:
+                            if "=" in part:
+                                k, v = part.split("=", 1)
+                                kv[k.strip()] = v.strip()
+                        def add_phrase(ph: str):
+                            nonlocal group
+                            if group is None:
+                                group = []
+                            if ph and ph.strip() and ph.strip().lower() not in ("none", "unknown"):
+                                group.append(ph.strip())
+                        # Compose clothing/accessory phrases from LINE 1
+                        top_color = kv.get("top_color", "unknown")
+                        top_type = kv.get("top_type", "unknown")
+                        bottom_color = kv.get("bottom_color", "unknown")
+                        bottom_type = kv.get("bottom_type", "unknown")
+                        bottom_length = kv.get("bottom_length", "unknown")
+                        shoes_color = kv.get("shoes_color", "unknown")
+                        shoes_type = kv.get("shoes_type", "unknown")
+                        bag_color = kv.get("bag_color", "unknown")
+                        bag_type = kv.get("bag_type", "unknown")
+                        headwear = kv.get("headwear", "unknown")
+                        hair = kv.get("hair", "unknown")
+                        accessories = kv.get("accessories", "none")
+                        pattern = kv.get("pattern", "none")
+                        distinctive = kv.get("distinctive", "none")
+                        # Dress rule
+                        if bottom_type == "dress":
+                            if bottom_color not in ("unknown", "none"):
+                                add_phrase(f"{bottom_color} dress")
+                        else:
+                            if top_color not in ("unknown", "none") and top_type not in ("unknown", "none"):
+                                add_phrase(f"{top_color} {top_type}")
+                            if bottom_color not in ("unknown", "none") and bottom_type not in ("unknown", "none"):
+                                if bottom_length not in ("unknown", "none"):
+                                    add_phrase(f"{bottom_length} {bottom_color} {bottom_type}")
+                                else:
+                                    add_phrase(f"{bottom_color} {bottom_type}")
+                        if shoes_color not in ("unknown", "none") and shoes_type not in ("unknown", "none"):
+                            add_phrase(f"{shoes_color} {shoes_type}")
+                        if bag_type not in ("none", "unknown"):
+                            if bag_color not in ("unknown", "none"):
+                                add_phrase(f"{bag_color} {bag_type}")
+                            else:
+                                add_phrase(f"{bag_type}")
+                        if headwear not in ("none", "unknown"):
+                            add_phrase(headwear)
+                        if hair not in ("unknown", "none"):
+                            add_phrase(f"{hair} hair" if hair not in ("bald", "covered") else hair)
+                        if accessories not in ("none", "unknown"):
+                            add_phrase(accessories)
+                        if pattern not in ("none", "unknown"):
+                            add_phrase("striped" if pattern == "stripes" else pattern)
+                        add_phrase(distinctive)
+                        # Parse LINE 2 cues: "cue1 | cue2 | cue3"
+                        cues = [c.strip() for c in line2.split("|") if c.strip()]
+                        for c in cues:
+                            add_phrase(c)
+                    # If not schema, fall-through to legacy parsing
+                if group is None:
+                    # Detect structured two-line output: CAPTION + TAGS
+                    tags_phrases = []
+                    caption_line = ""
+                    for it in items:
+                        low = it.lower().strip()
+                        if low.startswith("tags:"):
+                            tags_str = it.split(":", 1)[1].strip()
+                            raw_tokens = [t.strip() for t in tags_str.split(",") if t.strip()]
+                            def tok_to_phrase(tok: str) -> str:
+                                t = tok.strip().lower()
+                                # normalize no-* tokens
+                                if t.startswith("no-"):
+                                    return t.replace("no-", "no ")
+                                parts = t.split("-")
+                                # handle 2-part tokens for shoes/bag
+                                if parts[0] in ("shoes","bag") and len(parts) == 2:
+                                    return parts[1]
+                                if len(parts) >= 3 and parts[0] in ("top","outerwear","bottom","dress","shoes","bag"):
+                                    cat, typ, color = parts[0], parts[1], parts[2]
+                                    if cat == "dress":
+                                        return f"{color} dress"
+                                    return f"{color} {typ}"
+                                if parts[0] in ("logo","number","text","pattern"):
+                                    if len(parts) >= 2:
+                                        return f"{parts[1]} {parts[0]}"
+                                    return parts[0]
+                                if parts[0].startswith("hair") and len(parts) >= 3:
+                                    return f"{parts[1]} {parts[2]} hair"
+                                return tok
+                            tags_phrases = [tok_to_phrase(t) for t in raw_tokens]
+                        elif low.startswith("caption:"):
+                            caption_line = it.split(":", 1)[1].strip()
+                    if tags_phrases:
+                        clothing_kw_all = [
+                            "t-shirt","shirt","jacket","sweater","hoodie","coat",
+                            "blouse","top","jeans","pants","shorts","skirt","trousers","dress","tee"
+                        ]
+                        cloth_phrases = [p for p in tags_phrases if any(k in p.lower() for k in clothing_kw_all)]
+                        group = cloth_phrases or tags_phrases
+                        top_kw = ["t-shirt","shirt","jacket","sweater","hoodie","coat","blouse","top","tee"]
+                        bottom_kw = ["jeans","pants","shorts","skirt","trousers"]
+                        top_tok = next((p for p in tags_phrases if any(k in p.lower() for k in top_kw)), "")
+                        bottom_tok = next((p for p in tags_phrases if any(k in p.lower() for k in bottom_kw)), "")
+                        dress_tok = next((p for p in tags_phrases if "dress" in p.lower()), "")
+                        phrase = ""
+                        if top_tok and bottom_tok:
+                            phrase = f"person wearing {top_tok} and {bottom_tok}"
+                        elif dress_tok:
+                            phrase = f"person wearing {dress_tok}"
+                        elif top_tok:
+                            phrase = f"person wearing {top_tok}"
+                        elif bottom_tok:
+                            phrase = f"person wearing {bottom_tok}"
+                        if phrase:
+                            group = [phrase] + group
+                        if caption_line:
+                            group = [caption_line] + group
+                    else:
+                        if len(items) == 1:
+                            s = items[0].replace("；", ",").replace("，", ",")
+                            tokens = [t.strip() for t in s.split(",") if t.strip()]
+                            group = tokens if len(tokens) >= 2 else items
+                            if len(tokens) >= 2:
+                                clothing_kw_all = [
+                                    "t-shirt","shirt","jacket","sweater","hoodie","coat",
+                                    "blouse","top","jeans","pants","shorts","skirt","trousers","dress","tee"
+                                ]
+                                cloth_tokens = [t for t in tokens if any(k in t.lower() for k in clothing_kw_all)]
+                                if len(cloth_tokens) >= 1:
+                                    group = cloth_tokens
+                                top_kw = ["t-shirt","shirt","jacket","sweater","hoodie","coat","blouse","top","tee"]
+                                bottom_kw = ["jeans","pants","shorts","skirt","trousers"]
+                                top_tok = next((t for t in tokens if any(k in t.lower() for k in top_kw)), "")
+                                bottom_tok = next((t for t in tokens if any(k in t.lower() for k in bottom_kw)), "")
+                                dress_tok = next((t for t in tokens if "dress" in t.lower()), "")
+                                phrase2 = ""
+                                if top_tok and bottom_tok:
+                                    phrase2 = f"person wearing {top_tok} and {bottom_tok}"
+                                elif dress_tok:
+                                    phrase2 = f"person wearing {dress_tok}"
+                                elif top_tok:
+                                    phrase2 = f"person wearing {top_tok}"
+                                elif bottom_tok:
+                                    phrase2 = f"person wearing {bottom_tok}"
+                                if phrase2:
+                                    group = [phrase2] + group
+                        else:
+                            group = items
         else:
-            text = "person"
-        texts.append(text)
+            group = ["person"]
+        grouped_texts.append(group)
         image_names.append(img_name)
     
     # Batch processing with progress bar (auto-disables in non-TTY)
@@ -197,3 +355,29 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def _token_weight(token: str) -> float:
+    t = token.lower()
+    clothing_kw = ["t-shirt","shirt","jacket","sweater","hoodie","coat","jeans","pants","shorts","skirt","dress","blouse","tee","trousers"]
+    shoes_kw = ["sneakers","boots","sandals","shoes","heels","loafers"]
+    bag_kw = ["backpack","handbag","shoulder bag","bag","shoulder","waist","hand"]
+    acc_kw = ["hat","glasses","sunglasses","cap","mask","scarf","watch"]
+    hair_kw = ["hair","curly","straight","long","short","ponytail","bald","covered"]
+    motion_kw = ["walking","standing","sitting","running","biking","cycling","phone"]
+    skin_kw = ["skin"]
+    if any(k in t for k in clothing_kw):
+        return 1.0
+    if any(k in t for k in shoes_kw):
+        return 0.2
+    if any(k in t for k in bag_kw):
+        return 0.1
+    if any(k in t for k in acc_kw):
+        return 0.1
+    if any(k in t for k in hair_kw):
+        return 0.05
+    if any(k in t for k in motion_kw):
+        return 0.05
+    if any(k in t for k in skin_kw):
+        return 0.0
+    return 0.1

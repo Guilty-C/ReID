@@ -1,0 +1,5 @@
+{
+  "prompt": "Describe the person concisely in English focusing on identity-relevant attributes: gender expression, approximate age group, hair style/color, upper garment (type, primary color, patterns, logos), lower garment (type, primary color, patterns), shoes (type/color), carried items (e.g., backpack, handbag, shoulder bag), and notable accessories (e.g., hat, glasses). Avoid background or non-person details. Do not speculate about identity. Keep to 1–2 sentences.",
+  "version": "v1",
+  "notes": "Used for Market-1501 gold subset captioning. Captioner supports JSON or plaintext; this file uses the 'prompt' key."
+}

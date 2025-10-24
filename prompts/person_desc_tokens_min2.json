@@ -1,0 +1,5 @@
+{
+  "version": "1.0",
+  "prompt": "Look at the person and output exactly 2 short tokens, comma-separated: top color/type, bottom color/type. Use lowercase nouns/adjectives only, no verbs, no body/camera words. Keep ≤10 words total. Focus on the dominant colors and garment types only. Examples: 'white t-shirt, black shorts' | 'red jacket, blue jeans'",
+  "notes": "Minimal, high-signal tokens to better align with CLIP embeddings; avoid accessories and extra details."
+}

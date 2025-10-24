@@ -632,11 +632,14 @@ def main():
     ap.add_argument("--device", default="auto")
     ap.add_argument("--batch-size", type=int, default=64)
     ap.add_argument("--subset", choices=["gold", "full"], default="full")
+    ap.add_argument("--filter-ids", type=str, default="", help="Filter gallery by person IDs from .npy/.txt/.csv")
     ap.add_argument("--workers", type=int, default=4, help="Number of worker threads for preprocessing")
     ap.add_argument("--quantize", action="store_true", help="Apply model quantization")
     ap.add_argument("--low-res", action="store_true", help="Use lower resolution images")
     ap.add_argument("--num-processes", type=int, default=None, help="Number of processes for multiprocessing")
     ap.add_argument("--use-mmap", action="store_true", help="Use memory mapping for large files")
+    ap.add_argument("--paths-out", type=str, default="", help="Write processed image paths to a text file")
+    ap.add_argument("--subset-count", type=int, default=10, help="Total images for gold subset (2 per ID)")
     args = ap.parse_args()
     
     # Load config if not provided via CLI
@@ -690,9 +693,46 @@ def main():
     # Find image files
     image_pattern = os.path.join(args.root, args.split, "*.jpg")
     image_paths = sorted(glob.glob(image_pattern))
-    
+
+    # Optional: filter gallery images to a provided ID list
+    if args.filter_ids:
+        def load_ids_generic(path):
+            import csv
+            ext = os.path.splitext(path)[1].lower()
+            ids = []
+            if ext == ".npy":
+                arr = np.load(path, allow_pickle=True)
+                if arr.ndim != 1:
+                    arr = arr.reshape(-1)
+                ids = [str(x) for x in arr.tolist()]
+            else:
+                with open(path, "r", encoding="utf-8") as f:
+                    try:
+                        reader = csv.reader(f)
+                        rows = list(reader)
+                    except Exception:
+                        rows = [line.strip().split(",") for line in f.read().splitlines()]
+                if rows:
+                    header = rows[0]
+                    if any(h.lower() == "id" for h in header):
+                        idx = [i for i, h in enumerate(header) if h.lower() == "id"][0]
+                        for r in rows[1:]:
+                            if idx < len(r):
+                                ids.append(str(r[idx]).strip())
+                    else:
+                        for r in rows:
+                            if r:
+                                ids.append(str(r[0]).strip())
+            return set(ids)
+        try:
+            id_set = load_ids_generic(args.filter_ids)
+            image_paths = [p for p in image_paths if os.path.basename(p).split("_")[0] in id_set]
+            print(f"Filtered gallery to {len(image_paths)} images matching provided IDs")
+        except Exception as e:
+            print(f"[WARN] Failed to load filter IDs from {args.filter_ids}: {e}")
+
     if args.subset == "gold":
-        # Gold subset: 5 IDs × 2 images each
+        # Configurable gold subset: select first K images with >=2 per ID
         from collections import defaultdict
         id_to_images = defaultdict(list)
         for path in image_paths:
@@ -700,14 +740,15 @@ def main():
             pid = filename.split("_")[0]
             id_to_images[pid].append(path)
         
-        # Take first 5 IDs with at least 2 images each
+        target_total = max(1, int(args.subset_count))
+        ids_needed = max(1, (target_total + 1) // 2)
         gold_paths = []
         for pid, paths in id_to_images.items():
             if len(paths) >= 2:
                 gold_paths.extend(paths[:2])
-                if len([p for p in gold_paths if os.path.basename(p).split("_")[0] == pid]) >= 5:
+                if len(set([os.path.basename(p).split("_")[0] for p in gold_paths])) >= ids_needed:
                     break
-        image_paths = gold_paths[:10]  # Limit to 10 images for gold subset
+        image_paths = gold_paths[:target_total]
     
     print(f"Found {len(image_paths)} images for processing")
     
@@ -715,6 +756,7 @@ def main():
         print("Warning: No images found")
         # Create empty embeddings
         embeddings = np.zeros((0, 768), dtype="float32")
+        all_valid_paths = []
     else:
         # 批处理并显示详细进度
         all_embeddings = []
@@ -791,6 +833,17 @@ def main():
         os.makedirs(os.path.dirname(args.out), exist_ok=True)
         np.save(args.out, embeddings)
         print(f"Saved embeddings to {args.out}")
+    
+    # 写出处理过的图像路径（如指定）
+    try:
+        if args.paths_out:
+            os.makedirs(os.path.dirname(args.paths_out), exist_ok=True)
+            with open(args.paths_out, 'w', encoding='utf-8') as f:
+                for p in (all_valid_paths or []):
+                    f.write(str(p) + '\n')
+            print(f"Wrote processed image paths to {args.paths_out}")
+    except Exception as e:
+        print(f"Warning: failed to write paths_out: {e}")
     
     # 显示最终内存使用
     mem_final = process.memory_info().rss / 1024 / 1024

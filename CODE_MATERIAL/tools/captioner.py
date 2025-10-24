@@ -79,6 +79,12 @@ def main():
     ap.add_argument("--batch_size", type=int, default=1000, help="Batch size for processing")
     ap.add_argument("--resume_from", type=str, default="", help="Resume from checkpoint file")
     ap.add_argument("--checkpoint_interval", type=int, default=500, help="Save checkpoint every N items")
+    # API captioning options
+    ap.add_argument("--api_prompt", type=str, default="", help="LLM prompt text")
+    ap.add_argument("--api_prompt_file", type=str, default="", help="File path with prompt")
+    ap.add_argument("--api_model", type=str, default="", help="Model name (optional)")
+    ap.add_argument("--api_url", type=str, default="", help="Base URL for API (optional)")
+    ap.add_argument("--api_key", type=str, default="", help="API key (optional)")
     args = ap.parse_args()
 
     # 使用pathlib更高效地获取文件
@@ -113,6 +119,66 @@ def main():
     start_time = os.times().elapsed  # 记录开始时间
     
     records: Dict[str, List] = {}
+    # API captioning branch
+    if args.mode == "api":
+        prompt = args.api_prompt or (open(args.api_prompt_file, 'r', encoding='utf-8').read() if args.api_prompt_file else '')
+        api_model = args.api_model or os.environ.get('CAPTION_API_MODEL','')
+        api_url = args.api_url or os.environ.get('CAPTION_API_URL','')
+        api_key = args.api_key or os.environ.get('CAPTION_API_KEY','')
+        raw_log = args.out.replace('.json','.raw.jsonl')
+        meta_path = args.out.replace('.json','_meta.json')
+        os.makedirs(os.path.dirname(args.out), exist_ok=True)
+        start_t = os.times().elapsed
+        total = 0
+        # meta start
+        try:
+            with open(meta_path,'w',encoding='utf-8') as mf:
+                json.dump({"prompt":prompt,"model":api_model,"url":api_url,"started_at":start_t,"split":args.split,"subset":args.subset}, mf, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"Meta write error: {e}")
+        # import helper if available
+        try:
+            from iso_api_subset_eval import call_caption_api as _call
+        except Exception:
+            _call = None
+        # iterate images
+        for p in img_paths:
+            fn = os.path.basename(p)
+            result_text = ""
+            error = ""
+            try:
+                if _call is not None:
+                    resp = _call(p, prompt=prompt, model=api_model, url=api_url, api_key=api_key, mode='desc')
+                    result_text = resp.get('text','') or resp.get('content','') or ''
+                else:
+                    import base64, requests
+                    with open(p,'rb') as f:
+                        b64 = base64.b64encode(f.read()).decode('utf-8')
+                    payload = {"model": api_model or "gpt-4o-mini", "messages":[{"role":"user","content":[{"type":"input_text","text": prompt or "Describe the person concisely in English."},{"type":"input_image","image": b64}]}]}
+                    headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+                    r = requests.post(api_url.rstrip('/') + "/v1/messages", headers=headers, json=payload, timeout=60)
+                    result_text = r.json().get("output",{}).get("choices",[{}])[0].get("content",[{}])[0].get("text","")
+            except Exception as e:
+                error = str(e)
+                print(f"API error on {fn}: {e}")
+            # raw log
+            try:
+                with open(raw_log,'a',encoding='utf-8') as rf:
+                    rf.write(json.dumps({"file":fn,"text":result_text,"error":error}, ensure_ascii=False) + "\n")
+            except Exception:
+                pass
+            records[fn] = [result_text] if result_text else ["[API_ERROR_OR_EMPTY]"]
+            total += 1
+        end_t = os.times().elapsed
+        try:
+            with open(meta_path,'w',encoding='utf-8') as mf:
+                json.dump({"prompt":prompt,"model":api_model,"url":api_url,"started_at":start_t,"ended_at":end_t,"elapsed_s": end_t - start_t, "count": total, "split":args.split,"subset":args.subset}, mf, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"Meta finalize error: {e}")
+        with open(args.out,'w',encoding='utf-8') as f:
+            json.dump(records, f, ensure_ascii=False, indent=2)
+        print(f"[API] Generated {args.out} with {len(records)} captions")
+        return
     
     # 断点续跑逻辑
     processed_items = set()

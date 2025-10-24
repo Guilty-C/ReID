@@ -1,0 +1,5 @@
+{
+  "prompt": "Return one concise English line with comma-separated tokens only: top color/style, bottom color/style, shoes color/style, bag type/color if present, salient accessories. Use lowercase, nouns/adjectives only, no verbs, no determiners, no prefixes like 'upper/lower', no negatives like 'none' or 'no'. If an item is not visible, skip it instead of writing 'none'. Keep ≤20 words.",
+  "version": "1.0",
+  "notes": "Designed for CLIP-friendly retrieval. Prioritize dominant colors and garment types; include pattern words (striped, plaid, logo) when evident; avoid background/action details."
+}

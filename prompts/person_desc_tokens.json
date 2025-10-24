@@ -1,0 +1,5 @@
+{
+  "prompt": "Return one concise English line with comma-separated tokens only: top color+garment, bottom color+garment, shoes color+type, bag type+color (optional), accessories (optional). Use lowercase; nouns/adjectives only; no verbs/determiners; no prefixes like 'upper/lower'; do not output words 'none', 'no', or body/skin tokens. If an item is not clearly visible, skip it. Keep 20 words; prefer 't-shirt' not 'tshirt'; prefer pattern words (striped, plaid, logo) when evident.",
+  "version": "1.1",
+  "notes": "Stronger constraints: avoid negatives and body terms; unify garment spelling; keep consistent, CLIP-friendly tokens."
+}

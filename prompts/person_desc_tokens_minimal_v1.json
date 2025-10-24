@@ -1,0 +1,4 @@
+{
+  "version": "1.0",
+  "prompt": "Generate retrieval-optimized clothing tokens only. Exactly two lines.\n\nLine 1: CAPTION: <single sentence (≤20 words) describing upper, lower OR dress, shoes, and bag only>.\nLine 2: TAGS: <comma-separated tokens limited to clothing+bag>: top-<type>-<color>; outerwear-<type>-<color>; bottom-<type>-<color> OR dress-<color>; shoes-<type>-<color>; bag-<type>-<color> OR no-bag.\n\nRules:\n- Allowed colors: black, white, gray, brown, red, orange, yellow, green, blue, purple, pink, beige.\n- Allowed clothing types: T-shirt, shirt, blouse, hoodie, sweater, jacket, coat, vest, jeans, trousers, pants, shorts, skirt, dress, sneakers, shoes, boots, backpack, shoulder bag, tote, handbag.\n- Omit hair, accessories, pattern/logo unless striking; if absent, do not add \"no-*\" except no-bag.\n- No actions, camera/view, identity/age/race, or hedging.\n\nOutput format:\nCAPTION: <sentence>\nTAGS: <tokens>"
+}

@@ -1,0 +1,5 @@
+{
+  "version": "1.0",
+  "prompt": "Output a structured, comma-separated description: upper:<type/color/pattern>; lower:<type/color/pattern>; shoes:<type/color>; bag:<type>; accessories:<items>. Keep it brief (≤2 phrases). Focus only on identity-relevant attributes.",
+  "notes": "Structured prompt variant to produce schema-like phrases for CLIP-friendly text embeddings."
+}
