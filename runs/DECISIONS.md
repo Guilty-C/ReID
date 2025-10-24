@@ -1,11 +1,12 @@
-# Decisions — 2025-10-19
+# Baseline Freeze (2025-10-24)
 
-- 2025-10-19T16:45+09:00 — Gate FAIL (Rank-1=0.0253%, mAP=0.0%). Decision: schedule a re-run window.
+- Baseline: `outputs/comparison/20251024-190356_attrbank_v3_lr/`
+- Model: CLIP ViT-L/14, center crop, L2
+- Filelists: `larger_iso/64/query.txt`, `larger_iso/64/gallery.txt`
+- z-score: global mean/variance
+- Fusion: Logistic Regression (5-fold, class_weight=balanced) + Platt
+- Metrics: Rank-1=0.06, mAP=0.1302 (+13.3%), nDCG@10=0.1456 (+18.4%)
+- Re-ranking: disabled (no gain this round)
+- Seed: 42
 
-# Decisions — 2025-10-21
-
-- 2025-10-21T11:30+09:00 — 切换字幕到远端 Aizex API；配置 `CAPTION_API_URL`、`CAPTION_API_KEY`、`CAPTION_API_MODEL`。
-- 2025-10-21T11:35+09:00 — 主站健康检查返回 200（`https://aizex.top/v1/chat/completions`），确认远端命中与鉴权生效。
-- 2025-10-21T11:40+09:00 — 图文消息验证返回文本提示，当前 `gpt-4o-mini` 不具备图像处理能力。
-- 2025-10-21T11:45+09:00 — 重新运行实验使用远端字幕；产物位于 `outputs\experiments\EXP_20251021-114330\`；指标 `rank1=0.35`、`mAP=0.4973`；Gate PASS。
-- 2025-10-21T11:50+09:00 — 验证 `captions_query.raw.jsonl`：端点为 `https://aizex.top/v1/chat/completions`，`status=200` 且 20/20 文本非空。
+Decision: Treat `attrbank_v3_lr` as current baseline; keep re-ranking off until recall improves.

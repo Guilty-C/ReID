@@ -1,0 +1,2 @@
+baseline@20251024-211509 | setting=attrbank_v4_1_lr_soft | seed=42 | R1=-1.0000, mAP=-1.0000, nDCG10=-1.0000, known_rate=-1.0000, top1_mismatch=-1.0000 | w_exp=, w_attr=(0.6,0.3,0.1), tau=None, theta=None, delta=None°
+baseline@20251024-210600 | setting=attrbank_v4_1_lr_soft | seed=42 | R1=0.0400, mAP=0.1566, nDCG10=0.1888, known_rate=0.4700, top1_mismatch=0.0000 | w_exp=w1, w_attr=w2, tau=0.1, theta=0.3, delta=15.0°

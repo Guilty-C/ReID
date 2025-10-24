@@ -1,0 +1,24 @@
+{
+  "ts": "20251024-210600",
+  "seed": 42,
+  "python_version": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+  "platform": {
+    "system": "Windows",
+    "release": "10",
+    "version": "10.0.22621",
+    "machine": "AMD64"
+  },
+  "packages": {
+    "torch": "2.5.1+cu121",
+    "numpy": "1.26.4",
+    "scikit_learn": "1.5.2"
+  },
+  "cuda": {
+    "available": true,
+    "version": "12.1",
+    "cudnn_version": 90100
+  },
+  "clip_model_name": "CLIP ViT-L/14",
+  "embeds_path": "D:\\PRP SunnyLab\\ReID\\outputs\\embeds\\market1501.subset150.clip-L14.image.embeds.jsonl",
+  "embeds_sha256": ""
+}
