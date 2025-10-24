@@ -1,0 +1,5 @@
+{
+  "version": "1.2",
+  "prompt": "Describe ONLY the VISIBLE PART of the PERSON in English using a color-first, retrieval-friendly style. One concise sentence (≤25 words). Follow this order: visible clothing <color/type/pattern>; visible shoes <color/type>; visible bag <type>; visible accessories <items>. If a region (upper/lower/body part) is not clearly shown, omit it completely. Do not guess hidden areas, gender, or age. Focus on the most discriminative visible visual attributes that distinguish this person.",
+  "notes": "Partial-aware captioning prompt designed for cropped or occluded person images. Reduces hallucination of unseen regions and improves text–image alignment robustness for partial ReID datasets such as Partial-REID, Occluded-DukeMTMC, or cropped Market1501 subsets."
+}
